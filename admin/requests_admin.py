@@ -45,3 +45,9 @@ async def delete_user(tg_id):
         await session.execute(user_for_del)
         await session.commit()
         return result
+    
+async def check_name(tg_id):
+    async with async_session() as session:
+        request = select(User).where(User.tg_id == tg_id)
+        user = await session.scalar(request)
+        return user.name_and_lastname

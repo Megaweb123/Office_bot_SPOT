@@ -30,19 +30,20 @@ class DelUser(StatesGroup):
 @router_adm.message(Command('admin'))
 async def admin(message:Message):
     is_admin = await rq.check_user_is_adm(message.chat.id)
-    if is_admin:
+    if is_admin and message.chat.type == 'private':
         await message.answer('Клавиатура для админа открыта', reply_markup=kb_adm.main_admin)
 
 @router_adm.message(F.text == 'Получить все задачи')
 async def take_all_task(message: Message):
     is_admin = await rq.check_user_is_adm(message.chat.id)
-    if is_admin:
+    if is_admin and message.chat.type == 'private':
         tasks = await rq_adm.check_all_tasks()
         if len(tasks) == 0:
             await message.answer('Задач нет, можно спать!')
         else:
             for task in tasks:
-                text = f'Номер задачи: {task.id}\nЗадача: {task.task}\nТип задачи: {task.type_task}'
+                name = await rq_adm.check_name(task.tg_id)
+                text = f'Номер задачи: {task.id}\nЗадача: {task.task}\nЗадача от: {name}\nТип задачи: {task.type_task}'
                 if task.deadline != '':
                     text += f'\nDeadline: {task.deadline}'
                 await message.answer(text)
@@ -51,53 +52,56 @@ async def take_all_task(message: Message):
 @router_adm.message(F.text == 'Получить задачи Taste')
 async def take_taste_task(message: Message):
     is_admin = await rq.check_user_is_adm(message.chat.id)
-    if is_admin:
+    if is_admin and message.chat.type == 'private':
         await message.answer('Проверяю наличие задач..')
         tasks = await rq_adm.check_tasks('taste')
         if len(tasks) == 0:
             await message.answer('Запросов на вкусняшки нет, какие задачи получить?')
         else:
             for task in tasks:
-                text = f'Номер задачи: {task.id}\nЗадача: {task.task}\nТип задачи: {task.type_task}'
+                name = await rq_adm.check_name(task.tg_id)
+                text = f'Номер задачи: {task.id}\nЗадача: {task.task}\nЗадача от: {name}\nТип задачи: {task.type_task}'
                 await message.answer(text)
 
 @router_adm.message(F.text == 'Получить задачи Office')
 async def take_studio_task(message: Message):
     is_admin = await rq.check_user_is_adm(message.chat.id)
-    if is_admin:
+    if is_admin and message.chat.type == 'private':
         await message.answer('Проверяю наличие задач..')
         tasks = await rq_adm.check_tasks('office')
         if len(tasks) == 0:
             await message.answer('Запросов для офиса нет')
         else:
             for task in tasks:
-                text = f'Номер задачи: {task.id}\nЗадача: {task.task}\nТип задачи: {task.type_task}\nDeadline: {task.deadline}'
+                name = await rq_adm.check_name(task.tg_id) 
+                text = f'Номер задачи: {task.id}\nЗадача: {task.task}\nЗадача от: {name}\nТип задачи: {task.type_task}\nDeadline: {task.deadline}'
                 await message.answer(text)
 
 @router_adm.message(F.text == 'Получить задачи Idea')
 async def take_idea_task(message: Message):
     is_admin = await rq.check_user_is_adm(message.chat.id)
-    if is_admin:
+    if is_admin and message.chat.type == 'private':
         await message.answer('Проверяю наличие задач..')
         tasks = await rq_adm.check_tasks('idea')
         if len(tasks) == 0:
             await message.answer('Идей/запросов ни у кого нет')
         else:
             for task in tasks:
-                text = f'Номер задачи: {task.id}\nЗадача: {task.task}\nТип задачи: {task.type_task}\nDeadline: {task.deadline}'
+                name = await rq_adm.check_name(task.tg_id)
+                text = f'Номер задачи: {task.id}\nЗадача: {task.task}\nЗадача от: {name}\nТип задачи: {task.type_task}\nDeadline: {task.deadline}'
                 await message.answer(text)
 
 @router_adm.message(F.text == 'Закрыть задачу')
 async def closed_task_start(message: Message, state: FSMContext):
     is_admin = await rq.check_user_is_adm(message.chat.id)
-    if is_admin:
+    if is_admin and message.chat.type == 'private':
         await state.set_state(ClosedTask.task_id)
         await message.answer('Введите номер задачи')
 
 @router_adm.message(ClosedTask.task_id)
 async def closed_task_id(message: Message, state: FSMContext):
     is_admin = await rq.check_user_is_adm(message.chat.id)
-    if is_admin:
+    if is_admin and message.chat.type == 'private':
         try:
             id = int(message.text)
             result = await rq_adm.check_task(id)
@@ -119,7 +123,6 @@ async def closed_task_id(message: Message, state: FSMContext):
 
 @router_adm.message(ClosedTask.message)
 async def closed_task_message(message: Message, state: FSMContext):
-    print('НЕ NO')
     closed_task = await state.get_data()
     await bot.send_message(closed_task['tg_id'], closed_task['message_standart'])
     await bot.send_message(closed_task['tg_id'], message.text)
@@ -127,7 +130,6 @@ async def closed_task_message(message: Message, state: FSMContext):
 
 @router_adm.callback_query(ClosedTask.message)
 async def closed_task_callback(callback: CallbackQuery, state: FSMContext):
-    print('NO')
     await callback.answer()
     closed_task = await state.get_data()
     await bot.send_message(closed_task['tg_id'], closed_task['message_standart'])
@@ -136,7 +138,7 @@ async def closed_task_callback(callback: CallbackQuery, state: FSMContext):
 @router_adm.message(F.text == 'Добавить сотрудника Spot')
 async def add_user(message: Message, state: FSMContext):
     is_admin = await rq.check_user_is_adm(message.chat.id)
-    if is_admin:
+    if is_admin and message.chat.type == 'private':
         await state.set_state(AddUser.tg_id)
         await message.answer('Укажите telegram_id сотрудника Spot')
 
@@ -175,7 +177,7 @@ async def add_user_step_name(message: Message, state: FSMContext):
 @router_adm.message(F.text == 'Удалить сотрудника Spot')
 async def del_user(message: Message, state: FSMContext):
     is_admin = await rq.check_user_is_adm(message.chat.id)
-    if is_admin:
+    if is_admin and message.chat.type == 'private':
         await state.set_state(DelUser.tg_id)
         await message.answer('Укажите telegram_id (уже бывшего) сотрудника Spot')
 

@@ -32,8 +32,12 @@ async def back_button(callback: CallbackQuery, state: FSMContext):
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     if await rq.check_user(message.from_user.id) is True:
-        await message.answer('Привет, гайз!💅\nЭто бот-ассистент офис-менеджера Spot Film\n'
-                         'Я помогаю получать и обрабатывать все ваши запросы, чтобы мы ничего не потеряли и не упустили⚡️', reply_markup=kb.main)
+        if message.chat.type == 'private':
+            await message.answer('Привет, гайз!💅\nЭто бот-ассистент офис-менеджера Spot Film\n'
+                            'Я помогаю получать и обрабатывать все ваши запросы, чтобы мы ничего не потеряли и не упустили⚡️', reply_markup=kb.main)
+        else:
+            await message.answer('Привет, гайз!💅\nЭто бот-ассистент офис-менеджера Spot Film\n'
+                            'Я помогаю получать и обрабатывать все ваши запросы, чтобы мы ничего не потеряли и не упустили⚡️')
     else:
         await message.answer('К сожалению, тебя нет в списке ☹\nДля записи - обратись к офис менеджеру')
 
@@ -104,27 +108,27 @@ async def idea_end(callback: CallbackQuery, state: FSMContext):
 
 @router.message(F.text == 'Spot the Taste😋')
 async def tastе_start(message: Message, state: FSMContext):
-    if await rq.check_user(message.from_user.id):
+    if await rq.check_user(message.from_user.id) and message.chat.type == 'private':
         await state.set_state(AddedTeste.task)
         await message.answer('Чо по еде?\nВведите что хжелаете заказать из еды или напитков.\nЕсли приложите ссылки +100500 к карме✨', reply_markup=kb.back)
 
 @router.message(F.text == 'Spot the Studio✏')
 async def studio_start(message: Message, state: FSMContext):
-    if await rq.check_user(message.from_user.id):
+    if await rq.check_user(message.from_user.id) and message.chat.type == 'private':
         await state.set_state(AddedOffice.task)
         await message.answer('Смотрим ништяки для офиса, например, бумага или  картриджи, а мб вообще турник?\nПишите чо нужно🧐\n\n[те кто прикладывает ссылки, мои самые лутшие)))]', 
                             reply_markup=kb.back)
 
 @router.message(F.text == 'Spot the new idea💡')
 async def idea_start(message: Message, state: FSMContext):
-    if await rq.check_user(message.from_user.id):
+    if await rq.check_user(message.from_user.id) and message.chat.type == 'private':
         await state.set_state(AddedTask.task)
         await message.answer('Мы рады любому креативу (почти!)\nВозможно нам нужен новый формат мероприятий? А мб съездить всей командой на глэмпинг? А мб сходить на лекцию?\n'
                             'В общем пиши всио: свои идею/задачу или вопрос))', reply_markup=kb.back)
 
 @router.message(F.text == 'Вспомнить всё📝')
 async def get_all_tasks(message: Message):
-    if await rq.check_user(message.from_user.id):
+    if await rq.check_user(message.from_user.id) and message.chat.type == 'private':
         tasks = await rq.get_all_my_tasks(int(message.chat.id))
         if len(tasks) == 0:
             await message.answer('От тебя чота пока ничо не прилетало🥲 (и слава богу!)')
@@ -134,6 +138,7 @@ async def get_all_tasks(message: Message):
 
 @router.message(F.text == 'Куда заносить кэш ? 🧐')
 async def cash(message: Message):
-    await message.answer('Штош...\nПеревести кэш можно по номеру 8925 132 23 31 (на Райф или ВТБ) получатель Диана Владиславовна Ч.\n'
+    if await rq.check_user(message.from_user.id) and message.chat.type == 'private':
+        await message.answer('Штош...\nПеревести кэш можно по номеру 8925 132 23 31 (на Райф или ВТБ) получатель Диана Владиславовна Ч.\n'
                         'Обязательно просим подписывать для чего перевод или кидать Ди в личку документ перевода и подписать чо каво))\n'
                         'Спасибо!')
