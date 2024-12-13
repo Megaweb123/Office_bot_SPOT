@@ -57,7 +57,7 @@ async def closed_task_id(message: Message, state: FSMContext):
                     await state.update_data(tg_id=result[1])
                     await state.update_data(message_standart=result[0])
                     await state.set_state(ClosedTask.message)
-                    await message.answer('Написать сообщение сотруднику, оставившему эту задачу?', reply_markup=kb_adm.no_adm)
+                    await message.answer('Какое сообщение написать сотруднику, оставившему эту задачу?', reply_markup=kb_adm.no_adm)
                 except:
                     print('Не получилось отправить сообщение')
             else:
