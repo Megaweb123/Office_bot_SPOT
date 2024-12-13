@@ -31,6 +31,13 @@ class MessageAlert(StatesGroup):
     message = State()
     exceptions = State()
 
+@router_adm.callback_query(F.data == 'NO')
+async def back_button(callback: CallbackQuery, state: FSMContext):
+    if await rq.check_user(callback.from_user.id):
+        await callback.answer()
+        await state.clear()
+        await callback.message.edit_text('Упс! Попробуй еще. Нужно выбрать годную команду.')
+
 @router_adm.message(Command('admin'))
 async def admin(message:Message):
     is_admin = await rq.check_user_is_adm(message.chat.id)
@@ -125,18 +132,33 @@ async def del_user_step_tg_id(message: Message, state: FSMContext):
 async def alert_message(message: Message, state: FSMContext):
     await state.update_data(message=message.text)
     await state.set_state(MessageAlert.exceptions)
-    await message.answer('Напиши tg_id, кому не присылать, через запятую без точки')
+    await message.answer('Напиши tg_id, кому не присылать, через запятую без точки', reply_markup=kb_adm.message_alert)
 
 @router_adm.message(MessageAlert.exceptions)
 async def alert_end(message: Message, state: FSMContext):
-    exceptions = message.text.split(",")
-    exceptions.append(message.chat.id)
-    users = await rq_adm.get_all_users()
     alert_message = await state.get_data()
+    users = await rq_adm.get_all_users()
+    exceptions = message.text.strip(',')
     for user in users:
-        if user.tg_id not in exceptions:
-            await bot.send_message(user.tg_id, alert_message['message'])
+        try:
+            if str(user.tg_id) not in exceptions:
+                await bot.send_message(user.tg_id, alert_message['message'])
+        except Exception as e:
+            print(f"Error: {e}")
     await message.answer(f'Сообщение: {alert_message['message']}\nДоставлено всем, кроме: {exceptions}')
+    await state.clear()
+
+@router_adm.callback_query(F.data == 'All_member', MessageAlert.exceptions)
+async def alert_end(callback: CallbackQuery, state: FSMContext):
+    alert_message = await state.get_data()
+    users = await rq_adm.get_all_users()
+    for user in users:
+        try:
+            await bot.send_message(user.tg_id, alert_message['message'])
+        except Exception as e:
+            print(f"Error: {e}")
+    await callback.answer(f'Сообщение: {alert_message['message']}\nДоставлено всем')
+    await state.clear()
 
 @router_adm.message(F.text == 'Получить все задачи')
 async def take_all_task(message: Message):
@@ -201,21 +223,21 @@ async def closed_task_start(message: Message, state: FSMContext):
     is_admin = await rq.check_user_is_adm(message.chat.id)
     if is_admin and message.chat.type == 'private':
         await state.set_state(ClosedTask.task_id)
-        await message.answer('Введите номер задачи')
+        await message.answer('Введите номер задачи', reply_markup=kb_adm.no_adm)
 
 @router_adm.message(F.text == 'Добавить сотрудника Spot')
 async def add_user(message: Message, state: FSMContext):
     is_admin = await rq.check_user_is_adm(message.chat.id)
     if is_admin and message.chat.type == 'private':
         await state.set_state(AddUser.tg_id)
-        await message.answer('Укажите telegram_id сотрудника Spot')
+        await message.answer('Укажите telegram_id сотрудника Spot', reply_markup=kb_adm.no_adm)
 
 @router_adm.message(F.text == 'Удалить сотрудника Spot')
 async def del_user(message: Message, state: FSMContext):
     is_admin = await rq.check_user_is_adm(message.chat.id)
     if is_admin and message.chat.type == 'private':
         await state.set_state(DelUser.tg_id)
-        await message.answer('Укажите telegram_id (уже бывшего) сотрудника Spot')
+        await message.answer('Укажите telegram_id (уже бывшего) сотрудника Spot', reply_markup=kb_adm.no_adm)
 
 @router_adm.message(F.text == 'Список всех сотрудников')
 async def show_users(message: Message):
@@ -232,4 +254,4 @@ async def alert_start(message: Message, state: FSMContext):
     is_admin = await rq.check_user_is_adm(message.chat.id)
     if is_admin and message.chat.type == 'private':
         await state.set_state(MessageAlert.message)
-        await message.answer('О чем сообщить всем сотрудникам?')
+        await message.answer('О чем сообщить всем сотрудникам?', reply_markup=kb_adm.no_adm)

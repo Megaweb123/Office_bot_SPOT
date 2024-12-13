@@ -27,7 +27,7 @@ async def back_button(callback: CallbackQuery, state: FSMContext):
     if await rq.check_user(callback.from_user.id):
         await callback.answer()
         await state.clear()
-        await callback.message.edit_text('Выбери команду')
+        await callback.message.edit_text('Упс! Попробуй еще. Нужно выбрать годную команду.')
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):

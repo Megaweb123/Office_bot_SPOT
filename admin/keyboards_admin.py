@@ -8,3 +8,6 @@ main_admin = ReplyKeyboardMarkup(keyboard=[
     ], resize_keyboard=True)
 
 no_adm = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='❌а можно НЕ надо', callback_data='NO')]])
+
+message_alert = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='Всех без исключений', callback_data='All_member'), 
+                                                                       InlineKeyboardButton(text='❌а можно НЕ надо', callback_data='NO')]])
