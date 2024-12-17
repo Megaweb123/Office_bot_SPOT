@@ -1,14 +1,13 @@
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, ChatMemberUpdatedFilter
 from aiogram.types import Message, CallbackQuery
 from aiogram import F, Router
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from datetime import datetime, timedelta
-
+from bot_file import bot
 import handlers.keyboards as kb
 import database.requests as rq
 router = Router()
-
 
 class AddedTask(StatesGroup):
     task = State()
@@ -21,6 +20,12 @@ class AddedOffice(StatesGroup):
     tg_id = State()
     task = State()
     deadline = State()
+
+@router.chat_member()
+async def welcome_new_member(update: ChatMemberUpdatedFilter):
+    if update.new_chat_member.status == 'member':
+        chat_id = update.chat.id
+        await bot.send_message(chat_id, f"Добро пожаловать в команду Spot.films!\nЯ бот-ассистен офис менеджера, по всем вопросам можно обращаться ко мне в личку!")
 
 @router.callback_query(F.data == 'stop_write')
 async def back_button(callback: CallbackQuery, state: FSMContext):

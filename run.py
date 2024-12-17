@@ -5,7 +5,6 @@ from database.models import async_main
 from handlers.handlers import router
 from admin.handlers_admin import router_adm
 from bot_file import bot
-
 from scheduler import send_daily_message, check_birthdays
 
 dp = Dispatcher()
